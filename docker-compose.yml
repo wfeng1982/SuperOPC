@@ -1,0 +1,50 @@
+# Docker Compose for SuperOPC
+
+version: '3.8'
+
+services:
+  superopc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"      # API server
+      - "12321:12321"    # Browser automation
+      - "22321:22321"    # Browser WebSocket
+    environment:
+      - APP_NAME=SuperOPC
+      - DEBUG=false
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DB_URL=sqlite:///superopc.db
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - LOG_LEVEL=INFO
+    volumes:
+      - superopc_workspace:/home/superopc/.superopc
+      - superopc_models:/home/superopc/.superopc/models
+    depends_on:
+      - ollama
+    networks:
+      - superopc_network
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    networks:
+      - superopc_network
+    restart: unless-stopped
+
+volumes:
+  superopc_workspace:
+  superopc_models:
+  ollama_data:
+
+networks:
+  superopc_network:
+    driver: bridge
